@@ -3,18 +3,20 @@ import ReactDOM from 'react-dom';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from './config';
-import App from './App';
-import HomePage from './components/HomePage';
-import NotFoundPage from './components/NotFoundPage';
+import RootComponent from './App'; // Assuming App is the main or root component
+import DashboardPage from './components/HomePage'; // Assuming HomePage acts as a dashboard
+import PageNotFound from './components/NotFoundPage'; // More direct naming
 axios.defaults.baseURL = API_URL;
-const MainComponent = () => (
+
+const AppRouter = () => (
   <Router>
     <Switch>
-      <Route exact path="/" component={App}>
-        <Route exact path="/home" component={HomePage} />
+      <Route exact path="/" component={RootComponent}>
+        <Route exact path="/home" component={DashboardPage} />
       </Route>
-      <Route component={NotFoundPage} />
+      <Route component={PageNotFound} />
     </Switch>
   </Router>
 );
-ReactDOM.render(<MainComponent />, document.getElementById('root'));
+
+ReactDOM.render(<AppRouter />, document.getElementById('root'));
