@@ -12,47 +12,39 @@ const LogViewer: React.FC = () => {
   const [filteredLogs, setFilteredLogs] = useState<LogEntry[]>([]);
   const [filter, setFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [logsPerPage] = useState(10);
+  const logsPerPage = 10;
 
   useEffect(() => {
-    fetchLogs().then((fetchedLogs) => {
-      setLogs(fetchedLogs);
-      setFilteredLogs(fetchedLogs);
-    });
+    fetchLogs().then(setFetchedLogs);
   }, []);
 
   useEffect(() => {
+    filterLogsAndUpdate();
+  }, [filter, logs]);
+
+  const setFetchedLogs = (fetchedLogs: LogEntry[]) => {
+    setLogs(fetchedLogs);
+    setFilteredLogs(fetchedLogs);
+  };
+
+  const filterLogsAndUpdate = () => {
     const filtered = logs.filter((log) =>
       log.message.toLowerCase().includes(filter.toLowerCase())
     );
     setFilteredLogs(filtered);
-    setCurrentPage(1); 
-  }, [filter, logs]);
+    resetToFirstPage();
+  };
 
-  const lastLogIndex = currentPage * logsPerPage;
-  const firstLogIndex = lastLogIndex - logsPerPage;
-  const currentLogs = filteredLogs.slice(firstLogIndex, lastLogIndex);
+  const resetToFirstPage = () => setCurrentPage(1);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
+  const currentLogs = getCurrentLogs(filteredLogs, currentPage, logsPerPage);
+
   return (
     <div>
-      <input
-        type="text"
-        placeholder="Filter logs..."
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-      />
-      <div>
-        {currentLogs.map((log) => (
-          <div key={log.id}>
-            <p>{log.message}</p>
-            <p>
-              Level: {log.level} - Date: {log.timestamp.toString()}
-            </p>
-          </div>
-        ))}
-      </div>
+      <LogFilter filter={filter} setFilter={setFilter} />
+      <LogEntries entries={currentLogs} />
       <Pagination
         logsPerPage={logsPerPage}
         totalLogs={filteredLogs.length}
@@ -73,11 +65,7 @@ const Pagination: React.FC<PaginationProps> = ({
   totalLogs,
   paginate,
 }) => {
-  const pageNumbers = [];
-
-  for (let i = 1; i <= Math.ceil(totalLogs / logsPerPage); i++) {
-    pageNumbers.push(i);
-  }
+  const pageNumbers = computePageNumbers(totalLogs, logsPerPage);
 
   return (
     <nav>
@@ -91,6 +79,42 @@ const Pagination: React.FC<PaginationProps> = ({
     </nav>
   );
 };
+
+const computePageNumbers = (totalLogs: number, logsPerPage: number) => {
+  let pageNumbers = [];
+  for (let i = 1; i <= Math.ceil(totalLogs / logsPerPage); i++) {
+    pageNumbers.push(i);
+  }
+  return pageNumbers;
+};
+
+const getCurrentLogs = (logs: LogEntry[], currentPage: number, logsPerPage: number) => {
+  const lastLogIndex = currentPage * logsPerPage;
+  const firstLogIndex = lastLogIndex - logsPerPage;
+  return logs.slice(firstLogIndex, lastLogIndex);
+};
+
+const LogFilter: React.FC<{ filter: string; setFilter: React.Dispatch<React.SetStateAction<string>> }> = ({ filter, setFilter }) => (
+  <input
+    type="text"
+    placeholder="Filter logs..."
+    value={filter}
+    onChange={(e) => setFilter(e.target.value)}
+  />
+);
+
+const LogEntries: React.FC<{ entries: LogEntry[] }> = ({ entries }) => (
+  <div>
+    {entries.map((log) => (
+      <div key={log.id}>
+        <p>{log.message}</p>
+        <p>
+          Level: {log.level} - Date: {log.timestamp.toString()}
+        </p>
+      </div>
+    ))}
+  </div>
+);
 
 async function fetchLogs(): Promise<LogEntry[]> {
   return Promise.resolve([
