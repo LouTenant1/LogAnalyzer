@@ -16,30 +16,48 @@ const LogSearchComponent: React.FC = () => {
   const [keywordFilter, setKeywordFilter] = useState<string>('');
 
   useEffect(() => {
-    async function fetchLogs() {
-      const logsUrl = process.env.REACT_APP_LOGS_API_URL;
-      const response = await fetch(logsUrl!);
-      const data = await response.json();
-      setLogs(data);
-      setFilteredLogs(data);
-    }
     fetchLogs();
   }, []);
 
+  async function fetchLogs() {
+    const logsUrl = process.env.REACT_APP_LOGS_API_URL;
+    const response = await fetch(logsUrl!);
+    const data = await response.json();
+    setLogs(data);
+    setFilteredLogs(data);
+  }
+
   useEffect(() => {
-    const search = () => {
-      const lowercasedKeyword = keywordFilter.toLowerCase();
-      const result = logs.filter(log =>
-        (log.timestamp.includes(timestampFilter) || timestampFilter === '') &&
-        (log.level.includes(logLevelFilter) || logLevelFilter === '') &&
-        (log.source.includes(sourceFilter) || sourceFilter === '') &&
-        (log.message.toLowerCase().includes(lowercasedKeyword) || lowercasedKeyword === '')
-      );
-      setFilteredLogs(result);
-    };
-    search();
+    filterLogs();
   }, [timestampFilter, logLevelFilter, sourceFilter, keywordFilter, logs]);
 
+  function filterLogs() {
+    const lowercasedKeyword = keywordFilter.toLowerCase();
+    const result = logs.filter(log =>
+      filterByTimestamp(log) &&
+      filterByLogLevel(log) &&
+      filterBySource(log) &&
+      filterByKeyword(log, lowercasedKeyword)
+    );
+    setFilteredLogs(result);
+  }
+
+  function filterByTimestamp(log: LogEntry): boolean {
+    return log.timestamp.includes(timestampFilter) || timestampFilter === '';
+  }
+
+  function filterByLogLevel(log: LogEntry): boolean {
+    return log.level.includes(logLevelFilter) || logLevelFilter === '';
+  }
+
+  function filterBySource(log: LogEntry): boolean {
+    return log.source.includes(sourceFilter) || sourceFilter === '';
+  }
+
+  function filterByKeyword(log: LogEntry, keyword: string): boolean {
+    return log.message.toLowerCase().includes(keyword) || keyword === '';
+  }
+  
   return (
     <>
       <div>
