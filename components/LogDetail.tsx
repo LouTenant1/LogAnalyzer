@@ -12,14 +12,23 @@ interface LogDetailsProps {
   logEntry: LogEntry;
 }
 
+interface LogFilterProps {
+  logs: LogEntry[];
+  onFilter: (level: string) => void;
+}
+
+interface LogsViewerState {
+  logs: LogEntry[];
+  filteredLogs: LogEntry[];
+}
+
 const LogDetails: FC<LogDetailsProps> = ({ logEntry }) => {
-  const displayMetadata = (metadata: Record<string, any>) => {
-    return Object.entries(metadata).map(([key, value], index) => (
+  const displayMetadata = (metadata: Record<string, any>) =>
+    Object.entries(metadata).map(([key, value], index) => (
       <div key={index}>
         <strong>{key}:</strong> {JSON.stringify(value)}
       </div>
     ));
-  };
 
   return (
     <div>
@@ -38,13 +47,8 @@ const LogDetails: FC<LogDetailsProps> = ({ logEntry }) => {
   );
 };
 
-interface LogFilterProps {
-  logs: LogEntry[];
-  onFilter: (level: string) => void;
-}
-
 const LogFilter: FC<LogFilterProps> = ({ logs, onFilter }) => {
-  const [selectedLevel, setSelectedLevel] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState('');
 
   const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const level = event.target.value;
@@ -58,10 +62,8 @@ const LogFilter: FC<LogFilterProps> = ({ logs, onFilter }) => {
     <div>
       <select value={selectedLevel} onChange={handleFilterChange}>
         <option value="">Select Log Level</option>
-        {logLevels.map((level, index) => (
-          <option key={index} value={level}>
-            {level}
-          </option>
+        {logLevels.map((level) => (
+          <option key={level} value={level}>{level}</option>
         ))}
       </select>
     </div>
@@ -69,23 +71,18 @@ const LogFilter: FC<LogFilterProps> = ({ logs, onFilter }) => {
 };
 
 class LogsViewer extends React.Component<{}, LogsViewerState> {
-  constructor(props: {}) {
-    super(props);
-    this.state = {
-      logs: [], // You need to populate this array with your log entries
-      filteredLogs: [],
-    };
+  state: LogsViewerState = {
+    logs: [],
+    filteredLogs: [],
+  };
+
+  componentDidMount() {
   }
 
-  componentDidMount() {}
-
   filterLogsByLevel = (level: string) => {
-    if (level === '') {
-      this.setState({ filteredLogs: this.state.logs });
-    } else {
-      const filteredLogs = this.state.logs.filter(log => log.level === level);
-      this.setState({ filteredLogs });
-    }
+    this.setState({
+      filteredLogs: level === '' ? this.state.logs : this.state.logs.filter(log => log.level === level)
+    });
   };
 
   render() {
@@ -95,8 +92,8 @@ class LogsViewer extends React.Component<{}, LogsViewerState> {
     return (
       <div>
         <LogFilter logs={logs} onFilter={this.filterLogsByLevel} />
-        {logsToDisplay.map((logEntry, index) => (
-          <LogDetails key={index} logEntry={logEntry} />
+        {logsToDisplay.map((logEntry) => (
+          <LogDetails key={logEntry.id} logEntry={logEntry} />
         ))}
       </div>
     );
